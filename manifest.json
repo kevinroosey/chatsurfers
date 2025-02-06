@@ -1,8 +1,8 @@
 {
     "manifest_version": 3,
-    "name": "Vanilla Chrome Extension",
+    "name": "Chatsurfers",
     "version": "1.0",
-    "description": "A simple Chrome extension without Vite.",
+    "description": "Some entertainment while you wait for o1 to respond",
     "permissions": [
         "scripting",
         "activeTab"
