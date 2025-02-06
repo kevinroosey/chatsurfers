@@ -35,7 +35,17 @@
             ]
         }
     ],
+    "default-icons": {
+        "16": "icons/ChatSurfer-16.png",
+        "48": "icons/ChatSurfer-48.png",
+        "128": "icons/ChatSurfer-128.png"
+    },
     "action": {
-        "default_popup": "popup.html"
+        "default_popup": "popup.html",
+        "default-icons": {
+            "16": "icons/ChatSurfer-16.png",
+            "48": "icons/ChatSurfer-48.png",
+            "128": "icons/ChatSurfer-128.png"
+        }
     }
 }
