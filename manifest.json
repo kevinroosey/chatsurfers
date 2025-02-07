@@ -5,14 +5,14 @@
     "description": "Some entertainment while you wait for o1 to respond",
     "permissions": [
         "scripting",
-        "activeTab"
+        "activeTab",
+        "storage"
     ],
     "host_permissions": [
         "https://chatgpt.com/*"
     ],
     "background": {
-        "service_worker": "background.js",
-        "type": "module"
+        "service_worker": "background.js"
     },
     "content_scripts": [
         {
@@ -35,14 +35,14 @@
             ]
         }
     ],
-    "default-icons": {
+    "icons": {
         "16": "icons/ChatSurfer-16.png",
         "48": "icons/ChatSurfer-48.png",
         "128": "icons/ChatSurfer-128.png"
     },
     "action": {
         "default_popup": "popup.html",
-        "default-icons": {
+        "default_icon": {
             "16": "icons/ChatSurfer-16.png",
             "48": "icons/ChatSurfer-48.png",
             "128": "icons/ChatSurfer-128.png"
