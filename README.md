@@ -7,6 +7,6 @@
 ## Quick Start
 
 1. **Clone the repository**  
-2. **Head to [Chrome Extensions](chrome://extensions/)
+2. **Head to [chrome://extensions](chrome://extensions)**
 3. **Click Load Unpacked**
 4. **Select the chatsurfers repository**
