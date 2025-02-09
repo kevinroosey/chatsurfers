@@ -1,30 +1,35 @@
+document.addEventListener('DOMContentLoaded', function () {
+    const enableBtn = document.getElementById('enable-btn');
+    const disableBtn = document.getElementById('disable-btn');
 
+    // Get initial state
+    chrome.storage.local.get('extensionEnabled', function (data) {
+        const isEnabled = data.extensionEnabled || false;
+        updateButtonStates(isEnabled);
+    });
 
-document.addEventListener("DOMContentLoaded", function () {
-    const enableBtn = document.getElementById("enable-btn");
-    const disableBtn = document.getElementById("disable-btn");
-
-    if (typeof chrome !== "undefined" && chrome.storage) {
-        chrome.storage.local.get("extensionEnabled", function (data) {
-            const isEnabled = data.extensionEnabled ?? true; // Default: enabled
-            updateButtonStates(isEnabled);
-        });
-
-        function updateButtonStates(isEnabled) {
-            enableBtn.disabled = isEnabled;
-            disableBtn.disabled = !isEnabled;
-        }
-
-        enableBtn.addEventListener("click", function () {
-            chrome.storage.local.set({ extensionEnabled: true });
+    enableBtn.addEventListener('click', function () {
+        chrome.storage.local.set({ extensionEnabled: true }, function () {
+            // Send message to content script
+            chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+                chrome.tabs.sendMessage(tabs[0].id, { enabled: true });
+            });
             updateButtonStates(true);
         });
+    });
 
-        disableBtn.addEventListener("click", function () {
-            chrome.storage.local.set({ extensionEnabled: false });
+    disableBtn.addEventListener('click', function () {
+        chrome.storage.local.set({ extensionEnabled: false }, function () {
+            // Send message to content script
+            chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+                chrome.tabs.sendMessage(tabs[0].id, { enabled: false });
+            });
             updateButtonStates(false);
         });
-    } else {
-        console.warn("chrome.storage API is not available. Make sure this is running in an extension context.");
+    });
+
+    function updateButtonStates(isEnabled) {
+        enableBtn.disabled = isEnabled;
+        disableBtn.disabled = !isEnabled;
     }
 });

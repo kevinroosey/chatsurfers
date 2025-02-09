@@ -1,14 +1,20 @@
 console.log("ChatGPT extension content script loaded.");
 
+// Global observer variable
+let chatGPTObserver = null;
+let isExtensionEnabled = false;  // Track extension state
+
 // Request storage state from the background script
-chrome.runtime.sendMessage({ action: "getExtensionState" }, function (response) {
-    if (response && response.enabled) {
+chrome.storage.local.get('extensionEnabled', function (data) {
+    isExtensionEnabled = data.extensionEnabled || false;
+    if (isExtensionEnabled) {
         activateChatsurfers();
     }
 });
 
 // Listen for messages from `popup.js`
 chrome.runtime.onMessage.addListener(function (request) {
+    isExtensionEnabled = request.enabled;
     if (request.enabled) {
         activateChatsurfers();
     } else {
@@ -16,8 +22,10 @@ chrome.runtime.onMessage.addListener(function (request) {
     }
 });
 
-// Function to create the floating popup with a video and disable button
 function createPopup() {
+    // Don't create popup if extension is disabled
+    if (!isExtensionEnabled) return;
+
     let existingPopup = document.getElementById("chatgpt-popup");
     if (!existingPopup) {
         let popup = document.createElement("div");
@@ -32,21 +40,25 @@ function createPopup() {
         popup.style.zIndex = "10000";
         popup.style.display = "flex";
         popup.style.flexDirection = "column";
-        popup.style.alignItems = "center";
 
-        // Create the video element
+        let contentContainer = document.createElement("div");
+        contentContainer.style.position = "relative";
+        contentContainer.style.width = "100%";
+
         let video = document.createElement("video");
-        video.src = chrome.runtime.getURL("video/videoplayback.mp4"); // Get correct extension path
-        video.width = 400; // Adjust size as needed
+        video.id = "chatgpt-video";
+        video.src = chrome.runtime.getURL("video/videoplayback.mp4");
+        video.width = 400;
         video.height = 250;
-        video.muted = true; // 🔇 Muted to allow autoplay
-        video.autoplay = true; // 🚀 Autoplay enabled
-        video.loop = true; // 🔁 Loop video
+        video.muted = true;
+        video.autoplay = true;
+        video.loop = true;
 
-        // Create the Disable Extension button
         let disableBtn = document.createElement("button");
-        disableBtn.innerText = "Disable Extension";
-        disableBtn.style.marginTop = "10px";
+        disableBtn.innerText = "Disable";
+        disableBtn.style.position = "absolute";
+        disableBtn.style.top = "10px";
+        disableBtn.style.right = "10px";
         disableBtn.style.padding = "8px 16px";
         disableBtn.style.fontSize = "14px";
         disableBtn.style.border = "none";
@@ -54,103 +66,105 @@ function createPopup() {
         disableBtn.style.backgroundColor = "red";
         disableBtn.style.color = "white";
         disableBtn.style.cursor = "pointer";
-        disableBtn.style.transition = "background-color 0.2s ease-in-out";
+        disableBtn.style.zIndex = "1";
 
-        // Button hover effect
-        disableBtn.addEventListener("mouseover", function () {
-            disableBtn.style.backgroundColor = "#";
+        disableBtn.addEventListener("mouseover", () => {
+            disableBtn.style.backgroundColor = "#ff4444";
         });
-        disableBtn.addEventListener("mouseout", function () {
+        disableBtn.addEventListener("mouseout", () => {
             disableBtn.style.backgroundColor = "red";
         });
 
-        // Disable button click event
-        disableBtn.addEventListener("click", function () {
+        disableBtn.addEventListener("click", function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            isExtensionEnabled = false;
             chrome.storage.local.set({ extensionEnabled: false }, function () {
                 console.log("Extension disabled from content script.");
-
-                // Notify popup and background scripts
                 chrome.runtime.sendMessage({ enabled: false });
-
-                // Remove popup
-                removePopup();
+                disableChatsurfers();
             });
         });
 
-        // Append video and button to popup
-        popup.appendChild(video);
-        popup.appendChild(disableBtn);
+        contentContainer.appendChild(video);
+        contentContainer.appendChild(disableBtn);
+        popup.appendChild(contentContainer);
         document.body.appendChild(popup);
-        console.log("Popup with autoplaying video created.");
 
-        // Start playback programmatically (helps bypass restrictions)
         video.play().catch(error => console.log("Autoplay prevented:", error));
     }
 }
 
-// Function to remove the popup
 function removePopup() {
     let popup = document.getElementById("chatgpt-popup");
     if (popup) {
+        // Stop video playback
+        let video = popup.querySelector('video');
+        if (video) {
+            video.pause();
+            video.src = "";
+            video.load();
+        }
         popup.remove();
-        console.log("Popup removed.");
+        console.log("Popup removed successfully");
     }
 }
 
-// Function to check if ChatGPT is responding
 function isChatGPTResponding() {
-    const stopButton = document.querySelector('button[data-testid="stop-button"]'); // Appears when ChatGPT is responding
-    const sendButton = document.querySelector('button[data-testid="send-button"]'); // Becomes disabled when responding
-
+    if (!isExtensionEnabled) return false;
+    const stopButton = document.querySelector('button[data-testid="stop-button"]');
+    const sendButton = document.querySelector('button[data-testid="send-button"]');
     return (stopButton !== null) || (sendButton && sendButton.disabled);
 }
 
-// Function to observe ChatGPT state changes
 function observeChatGPTButton() {
-    const chatContainer = document.body; // Observe entire body since stop button appears dynamically
+    if (!isExtensionEnabled) return;
 
+    const chatContainer = document.body;
     if (!chatContainer) {
         console.warn("ChatGPT container not found. Retrying...");
-        setTimeout(observeChatGPTButton, 1000); // Retry after 1 second
+        setTimeout(observeChatGPTButton, 1000);
         return;
     }
 
-    const observer = new MutationObserver(() => {
-        if (isChatGPTResponding()) {
+    if (chatGPTObserver) {
+        chatGPTObserver.disconnect();
+    }
+
+    chatGPTObserver = new MutationObserver(() => {
+        if (isExtensionEnabled && isChatGPTResponding()) {
             console.log("ChatGPT is responding...");
             createPopup();
         } else {
-            console.log("ChatGPT response complete.");
+            console.log("ChatGPT response complete or extension disabled.");
             removePopup();
         }
     });
 
-    // Observe changes in the entire chat container
-    observer.observe(chatContainer, { childList: true, subtree: true });
-
+    chatGPTObserver.observe(chatContainer, { childList: true, subtree: true });
     console.log("ChatGPT observer started.");
 }
 
-// Function to enable the extension's features
 function activateChatsurfers() {
     console.log("Chatsurfers Enabled");
+    isExtensionEnabled = true;
     observeChatGPTButton();
 }
 
-// Function to disable the extension's features
 function disableChatsurfers() {
     console.log("Chatsurfers Disabled");
+    isExtensionEnabled = false;
+
+    if (chatGPTObserver) {
+        chatGPTObserver.disconnect();
+        chatGPTObserver = null;
+    }
+
     removePopup();
 }
 
-// Start observing when the page loads
-observeChatGPTButton();
-
-
-
-
-
-
-
-
-
+// Only start if extension is enabled
+if (isExtensionEnabled) {
+    observeChatGPTButton();
+}
