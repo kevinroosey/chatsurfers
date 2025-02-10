@@ -1,7 +1,6 @@
-console.log("ChatGPT extension content script loaded.");
+console.log("Claude extension content script loaded.");
 
 // Global observer variable
-let chatGPTObserver = null;
 let claudeObserver = null;
 let isExtensionEnabled = false;  // Track extension state
 
@@ -110,64 +109,6 @@ function removePopup() {
         popup.remove();
         console.log("Popup removed successfully");
     }
-}
-
-function isChatGPTResponding() {
-    if (!isExtensionEnabled) return false;
-    const stopButton = document.querySelector('button[data-testid="stop-button"]');
-    const sendButton = document.querySelector('button[data-testid="send-button"]');
-    return (stopButton !== null) || (sendButton && sendButton.disabled);
-}
-
-function observeChatGPTButton() {
-    if (!isExtensionEnabled) return;
-
-    const chatContainer = document.body;
-    if (!chatContainer) {
-        console.warn("ChatGPT container not found. Retrying...");
-        setTimeout(observeChatGPTButton, 1000);
-        return;
-    }
-
-    if (chatGPTObserver) {
-        chatGPTObserver.disconnect();
-    }
-
-    chatGPTObserver = new MutationObserver(() => {
-        if (isExtensionEnabled && isChatGPTResponding()) {
-            console.log("ChatGPT is responding...");
-            createPopup();
-        } else {
-            console.log("ChatGPT response complete or extension disabled.");
-            removePopup();
-        }
-    });
-
-    chatGPTObserver.observe(chatContainer, { childList: true, subtree: true });
-    console.log("ChatGPT observer started.");
-}
-
-function activateChatsurfers() {
-    console.log("Chatsurfers Enabled");
-    isExtensionEnabled = true;
-    observeChatGPTButton();
-}
-
-function disableChatsurfers() {
-    console.log("Chatsurfers Disabled");
-    isExtensionEnabled = false;
-
-    if (chatGPTObserver) {
-        chatGPTObserver.disconnect();
-        chatGPTObserver = null;
-    }
-
-    removePopup();
-}
-
-// Only start if extension is enabled
-if (isExtensionEnabled) {
-    observeChatGPTButton();
 }
 
 // Claude functionality
