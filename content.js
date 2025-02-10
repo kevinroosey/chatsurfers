@@ -2,6 +2,7 @@ console.log("ChatGPT extension content script loaded.");
 
 // Global observer variable
 let chatGPTObserver = null;
+let claudeObserver = null;
 let isExtensionEnabled = false;  // Track extension state
 
 // Request storage state from the background script
@@ -167,4 +168,63 @@ function disableChatsurfers() {
 // Only start if extension is enabled
 if (isExtensionEnabled) {
     observeChatGPTButton();
+}
+
+// Claude functionality
+function isClaudeResponding() {
+    if (!isExtensionEnabled) return false;
+    const stopButton = document.querySelector('button[aria-label="Stop Response"]');
+    const sendButton = document.querySelector('button[aria-label="Send Message"]');
+    return (stopButton !== null) || (sendButton && sendButton.disabled);
+}
+
+function observeClaudeButton() {
+    if (!isExtensionEnabled) return;
+
+    const chatContainer = document.body;
+    if (!chatContainer) {
+        console.warn("Claude container not found. Retrying...");
+        setTimeout(observeClaudeButton, 1000);
+        return;
+    }
+
+    if (claudeObserver) {
+        claudeObserver.disconnect();
+    }
+
+    claudeObserver = new MutationObserver(() => {
+        if (isExtensionEnabled && isClaudeResponding()) {
+            console.log("ChatGPT is responding...");
+            createPopup();
+        } else {
+            console.log("ChatGPT response complete or extension disabled.");
+            removePopup();
+        }
+    });
+
+    claudeObserver.observe(chatContainer, { childList: true, subtree: true });
+    console.log("ChatGPT observer started.");
+}
+
+function activateChatsurfers() {
+    console.log("Chatsurfers Enabled");
+    isExtensionEnabled = true;
+    observeClaudeButton();
+}
+
+function disableChatsurfers() {
+    console.log("Chatsurfers Disabled");
+    isExtensionEnabled = false;
+
+    if (claudeObserver) {
+        claudeObserver.disconnect();
+        claudeObserver = null;
+    }
+
+    removePopup();
+}
+
+// Only start if extension is enabled
+if (isExtensionEnabled) {
+    observeClaudeButton();
 }
