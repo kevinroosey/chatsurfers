@@ -9,7 +9,8 @@
         "storage"
     ],
     "host_permissions": [
-        "https://chatgpt.com/*"
+        "https://chatgpt.com/*",
+        "https://claude.ai/*"
     ],
     "background": {
         "service_worker": "background.js"
@@ -18,11 +19,16 @@
         {
             "matches": [
                 "https://chatgpt.com/*"
-            ],
+              ],
             "js": [
-                "content.js"
+                "content-chatgpt.js"
             ],
             "run_at": "document_idle"
+        },
+        {
+            "matches": ["*://claude.ai/*"],
+             "js": ["content-claude.js"]
+    
         }
     ],
     "web_accessible_resources": [

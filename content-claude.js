@@ -1,7 +1,7 @@
-console.log("ChatGPT extension content script loaded.");
+console.log("Claude extension content script loaded.");
 
 // Global observer variable
-let chatGPTObserver = null;
+let claudeObserver = null;
 let isExtensionEnabled = false;  // Track extension state
 
 // Request storage state from the background script
@@ -111,29 +111,30 @@ function removePopup() {
     }
 }
 
-function isChatGPTResponding() {
+// Claude functionality
+function isClaudeResponding() {
     if (!isExtensionEnabled) return false;
-    const stopButton = document.querySelector('button[data-testid="stop-button"]');
-    const sendButton = document.querySelector('button[data-testid="send-button"]');
+    const stopButton = document.querySelector('button[aria-label="Stop Response"]');
+    const sendButton = document.querySelector('button[aria-label="Send Message"]');
     return (stopButton !== null) || (sendButton && sendButton.disabled);
 }
 
-function observeChatGPTButton() {
+function observeClaudeButton() {
     if (!isExtensionEnabled) return;
 
     const chatContainer = document.body;
     if (!chatContainer) {
-        console.warn("ChatGPT container not found. Retrying...");
-        setTimeout(observeChatGPTButton, 1000);
+        console.warn("Claude container not found. Retrying...");
+        setTimeout(observeClaudeButton, 1000);
         return;
     }
 
-    if (chatGPTObserver) {
-        chatGPTObserver.disconnect();
+    if (claudeObserver) {
+        claudeObserver.disconnect();
     }
 
-    chatGPTObserver = new MutationObserver(() => {
-        if (isExtensionEnabled && isChatGPTResponding()) {
+    claudeObserver = new MutationObserver(() => {
+        if (isExtensionEnabled && isClaudeResponding()) {
             console.log("ChatGPT is responding...");
             createPopup();
         } else {
@@ -142,23 +143,23 @@ function observeChatGPTButton() {
         }
     });
 
-    chatGPTObserver.observe(chatContainer, { childList: true, subtree: true });
+    claudeObserver.observe(chatContainer, { childList: true, subtree: true });
     console.log("ChatGPT observer started.");
 }
 
 function activateChatsurfers() {
     console.log("Chatsurfers Enabled");
     isExtensionEnabled = true;
-    observeChatGPTButton();
+    observeClaudeButton();
 }
 
 function disableChatsurfers() {
     console.log("Chatsurfers Disabled");
     isExtensionEnabled = false;
 
-    if (chatGPTObserver) {
-        chatGPTObserver.disconnect();
-        chatGPTObserver = null;
+    if (claudeObserver) {
+        claudeObserver.disconnect();
+        claudeObserver = null;
     }
 
     removePopup();
@@ -166,5 +167,5 @@ function disableChatsurfers() {
 
 // Only start if extension is enabled
 if (isExtensionEnabled) {
-    observeChatGPTButton();
+    observeClaudeButton();
 }
