@@ -4,8 +4,10 @@
 ![Screenshot of the App](./icons/ChatSurferScreenshot.jpg)
 
 ### Update: Chatsurfers now runs on the following sites:
-    - [chatgpt.com] (https://chatgpt.com)
-    - [claude.ai] (https://claude.ai)
+- [ChatGPT](https://www.chatgpt.com)
+- [Claude](https://www.claude.ai)
+
+#### Feel free to fork to add another site. I'll most likely merge if you open a PR
 
 ## Quick Start
 
